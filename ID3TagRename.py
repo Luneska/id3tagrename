@@ -1,7 +1,7 @@
 #!/usr/bin/python
 #
 # =============================================================================
-#  Version: 1.1 (March 8, 2013)
+#  Version: 1.2 (July 31, 2013)
 #  Author: Jeff Puchalski (jpp13@cornell.edu)
 #
 # =============================================================================
@@ -47,7 +47,12 @@ def rename_file(dirpath, fname, album_naming, clear_comments):
     newname = newname.translate(dict((ord(c), None) for c in u'"*/:<>?\|'))
     
     new_file = os.path.join(dirpath, newname)
-    os.rename(file, new_file)
+    
+    try:
+        os.rename(file, new_file)
+    except:
+        sys.stderr.write("Error processing file %s" % fname)
+        return
     
     if clear_comments:
         audio = ID3(new_file)
