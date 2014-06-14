@@ -1,10 +1,6 @@
 #!/usr/bin/python
 #
 # =============================================================================
-#  Version: 1.2 (July 31, 2013)
-#  Author: Jeff Puchalski (jpp13@cornell.edu)
-#
-# =============================================================================
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -23,6 +19,8 @@ import sys, os, re, argparse, fnmatch
 from mutagen.id3 import ID3
 from mutagen.easyid3 import EasyID3
 
+__version__ = "1.3"
+
 # Glob pattern of files to include
 includes = [ '*.mp3' ]
 # Transform glob pattern to regular expression
@@ -36,15 +34,33 @@ def rename_file(dirpath, fname, album_naming, clear_comments):
     except:
         sys.stderr.write("Error processing file %s" % fname)
         return
+        
+    try:
+        artist = audio['artist'][0]
+    except KeyError:
+        fname_sans_ext = ''.join(fname.split('.')[:-1])
+        artist = fname_sans_ext.split('-')[0].strip()
+    
+    try:
+        title = audio['title'][0]
+    except KeyError:
+        fname_sans_ext = ''.join(fname.split('.')[:-1])
+        title = fname_sans_ext.split('-')[-1].strip()
+    
+    newname = ''
     
     if album_naming:
         tracknum = re.sub(r'([0-9]+)/.*', r'\1', audio["tracknumber"][0])
-        newname = ''.join([ audio['artist'][0], ' -', format("%02d" % int(tracknum)), '- ' ])
+        newname = ''.join([ artist, ' -', format("%02d" % int(tracknum)), '- ' ])
     else:
-        newname = ''.join([ audio['artist'][0], ' - ' ])
-    newname = ''.join([ newname, audio['title'][0], '.mp3' ])
+        newname = ''.join([ artist, ' - ' ])
+        
+    newname = unicode(''.join([ newname, title, '.mp3' ]))
+    
+    print newname
+    
     # Drop punctuation from the new file name
-    newname = newname.translate(dict((ord(c), None) for c in u'"*/:<>?\|'))
+    newname = newname.translate({ord(c): None for c in u'"*/:<>?\|'})
     
     new_file = os.path.join(dirpath, newname)
     
@@ -61,7 +77,8 @@ def rename_file(dirpath, fname, album_naming, clear_comments):
         
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-v', '--version', action='version', version='%(prog)s 1.1')
+    parser.add_argument('-v', '--version', action='version', 
+                        version='%(prog)s {version}'.format(version=__version__))
     parser.add_argument('-a', '--album-naming', action='store_true',
                         help='Album naming scheme (artist-tracknum-title)')
     parser.add_argument('-c', '--clear-comments', action='store_true',
